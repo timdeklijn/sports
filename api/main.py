@@ -1,31 +1,34 @@
+"""main.py
+
+The full API.
 """
-==== Exercises ====
 
-GET /exercises/ - get all exercises
-GET /exercises/{exercise_id} - get a specific exercise
-DELETE /exercises/{exercise_id} - remove a specific exercise
-POST /exercises/ - add an exercise
-TODO: PUT /exercises/{exercise_id} - modify a specific exercise
-
-==== Sessions ====
-
-GET /sessions/ - get all workout sessions
-GET /sessions/{session_id} - get a specific workout session
-DELETE /sessions/{session_id} - delete a specific workout session
-TODO: PUT /sessions/{session_id} - modify a specific session
-GET /sessions/current/ - Either add a new exercise of create a new one
-GET /sessions/{session_id}/close - Close a specific session
-TODO: POST /sessions/{session_id}/{exercise_id} {"reps": int, "times": int}
-
-==== Workouts ====
-
-TODO: GET /workouts/ - get a list of all workouts
-TODO: GET /workouts/ - Get a specific workout
-TODO: GET /workouts/exercise/{exercise_id} - get a list of all workouts of a specific
-  exercise
-TODO: PUT /workouts/{workout_id} - modify specific workout
-TODO: DELETE /workouts/{workout_id} - remove a specific workout
-"""
+# ==== Exercises ====
+#
+# GET /exercises/ - get all exercises
+# GET /exercises/{exercise_id} - get a specific exercise
+# DELETE /exercises/{exercise_id} - remove a specific exercise
+# POST /exercises/ - add an exercise
+# TODO: PUT /exercises/{exercise_id} - modify a specific exercise
+#
+# ==== Sessions ====
+#
+# GET /sessions/ - get all workout sessions
+# GET /sessions/{session_id} - get a specific workout session
+# DELETE /sessions/{session_id} - delete a specific workout session
+# TODO: PUT /sessions/{session_id} - modify a specific session
+# GET /sessions/current/ - Either add a new exercise of create a new one
+# GET /sessions/{session_id}/close - Close a specific session
+# POST /sessions/{session_id}/exercise/{exercise_id} {"reps": int, "times": int}
+#
+# ==== Workouts ====
+#
+# GET /workouts/ - get a list of all workouts
+# GET /workouts/{workout_id} - Get a specific workout
+# GET /workouts/exercise/{exercise_id} - get a list of all workouts of a specific
+#   exercise
+# TODO: PUT /workouts/{workout_id} - modify specific workout
+# DELETE /workouts/{workout_id} - remove a specific workout
 
 from typing import List
 
@@ -117,6 +120,27 @@ def close_session(session_id: int, db: Session = Depends(get_db)):
     return db_session
 
 
+@app.post(
+    "/sessions/{session_id}/exercise/{exercise_id}",
+    response_model=schemas.Workout,
+    responses={404: {"model": schemas.Message}},
+)
+def add_workout_to_session(
+    session_id: int,
+    exercise_id: int,
+    workout: schemas.WorkoutCreate,
+    db: Session = Depends(get_db),
+):
+    db_workout = crud.create_workout(
+        db, session_id, exercise_id, workout.reps, workout.time
+    )
+    if db_workout is None:
+        return JSONResponse(
+            status_code=404, content={"message": "Error inserting workout"}
+        )
+    return db_workout
+
+
 @app.get(
     "/sessions/{session_id}",
     response_model=schemas.Session,
@@ -139,3 +163,42 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
     if db_session is None:
         return JSONResponse(status_code=404, content={"message": "Session not Found"})
     return db_session
+
+
+# Workouts ============================================================================
+
+
+@app.get("/workouts/", response_model=List[schemas.Workout])
+def read_workouts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_workouts(db)
+
+
+@app.get(
+    "/workouts/{workout_id}",
+    response_model=schemas.Workout,
+    responses={404: {"model": schemas.Message}},
+)
+def read_workout(workout_id: int, db: Session = Depends(get_db)):
+    db_workout = crud.get_workout_by_id(db, workout_id)
+    if db_workout is None:
+        return JSONResponse(status_code=404, content={"message": "Workout not Found"})
+    return db_workout
+
+
+@app.delete(
+    "/workouts/{workout_id}",
+    response_model=schemas.Workout,
+    responses={404: {"model": schemas.Message}},
+)
+def delete_workout(workout_id: int, db: Session = Depends(get_db)):
+    db_workout = crud.remove_workout_by_id(db, workout_id=workout_id)
+    if db_workout is None:
+        return JSONResponse(status_code=404, content={"message": "Workout not Found"})
+    return db_workout
+
+
+@app.get(
+    "/workouts/exercise/{exercise_id}", response_model=List[schemas.Workout],
+)
+def get_workouts_by_exercise_id(exercise_id: int, db: Session = Depends(get_db)):
+    return crud.get_workout_by_exercise(db, exercise_id=exercise_id)

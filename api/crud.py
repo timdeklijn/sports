@@ -1,3 +1,7 @@
+"""crud.py
+
+Database operation functions
+"""
 from sqlalchemy.orm import Session
 import datetime
 
@@ -85,3 +89,43 @@ def close_session_by_id(db: Session, session_id):
     session.end_datetime = datetime.datetime.now()
     db.commit()
     return session
+
+
+# Workouts ============================================================================
+
+
+def create_workout(db: Session, session_id, exercise_id, reps, time):
+    db_workout = models.Workout(
+        session_id=session_id,
+        exercise_id=exercise_id,
+        reps=reps,
+        time=time,
+        created_at=datetime.datetime.now(),
+    )
+    db.add(db_workout)
+    db.commit()
+    db.refresh(db_workout)
+    return db_workout
+
+
+def get_workouts(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Workout).offset(skip).limit(limit).all()
+
+
+def get_workout_by_id(db: Session, workout_id):
+    return db.query(models.Workout).filter(models.Workout.id == workout_id).first()
+
+
+def remove_workout_by_id(db: Session, workout_id):
+    workout = get_workout_by_id(db, workout_id)
+    if workout is None:
+        return None
+    db.delete(workout)
+    db.commit()
+    return workout
+
+
+def get_workout_by_exercise(db: Session, exercise_id):
+    return (
+        db.query(models.Workout).filter(models.Workout.exercise_id == exercise_id).all()
+    )

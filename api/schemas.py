@@ -44,17 +44,19 @@ class Session(SessionBase):
 
 
 class WorkoutBase(BaseModel):
-    session_id: int
-    exercise_id: int
+    time: int = None
+    reps: int = None
 
 
 class WorkoutCreate(WorkoutBase):
-    reps: int
-    time: int
+    pass
 
 
 class Workout(WorkoutBase):
     id: int
+    session_id: int
+    exercise_id: int
+    created_at: datetime.datetime
 
     class Config:
         orm_mode = True

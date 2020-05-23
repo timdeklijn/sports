@@ -33,3 +33,4 @@ class Workout(Base):
     exercise_id = Column(Integer, ForeignKey("exercises.id"))
     reps = Column(Integer)
     time = Column(Integer)
+    created_at = Column(DateTime)
