@@ -10,11 +10,11 @@ TODO: PUT /exercises/{exercise_id} - modify a specific exercise
 ==== Sessions ====
 
 GET /sessions/ - get all workout sessions
-TODO: GET /sessions/{session_id} - get a specific workout session
-TODO: DELETE /sessions/{session_id} - delete a specific workout session
+GET /sessions/{session_id} - get a specific workout session
+DELETE /sessions/{session_id} - delete a specific workout session
 TODO: PUT /sessions/{session_id} - modify a specific session
-TODO: GET /sessions/current/ - Either add a new exercise of create a new one
-TODO: GET /sessions/close/{session_id} - Close a specific session
+GET /sessions/current/ - Either add a new exercise of create a new one
+GET /sessions/{session_id}/close - Close a specific session
 TODO: POST /sessions/{session_id}/{exercise_id} {"reps": int, "times": int}
 
 ==== Workouts ====
@@ -47,6 +47,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Exercises ===========================================================================
 
 
 @app.get("/exercises/", response_model=List[schemas.Exercise])
@@ -83,6 +86,9 @@ def delete_exercise(exercise_id: int, db: Session = Depends(get_db)):
     return db_exercise
 
 
+# Sessions ============================================================================
+
+
 @app.get("/sessions/", response_model=List[schemas.Session])
 def read_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
@@ -97,3 +103,39 @@ def check_sessions(db: Session = Depends(get_db)):
     Either return an open session id or create a new one
     """
     return {"id": crud.get_open_session_id_or_create(db)}
+
+
+@app.get(
+    "/sessions/{session_id}/close",
+    response_model=schemas.Session,
+    responses={404: {"model": schemas.Message}},
+)
+def close_session(session_id: int, db: Session = Depends(get_db)):
+    db_session = crud.close_session_by_id(db, session_id)
+    if db_session is None:
+        return JSONResponse(status_code=404, content={"message": "Session not Found"})
+    return db_session
+
+
+@app.get(
+    "/sessions/{session_id}",
+    response_model=schemas.Session,
+    responses={404: {"model": schemas.Message}},
+)
+def read_session(session_id: int, db: Session = Depends(get_db)):
+    db_session = crud.get_session_by_id(db, session_id=session_id)
+    if db_session is None:
+        return JSONResponse(status_code=404, content={"message": "Session not Found"})
+    return db_session
+
+
+@app.delete(
+    "/sessions/{session_id}",
+    response_model=schemas.Session,
+    responses={404: {"model": schemas.Message}},
+)
+def delete_session(session_id: int, db: Session = Depends(get_db)):
+    db_session = crud.remove_session_by_id(db, session_id=session_id)
+    if db_session is None:
+        return JSONResponse(status_code=404, content={"message": "Session not Found"})
+    return db_session

@@ -40,6 +40,10 @@ def get_sessions(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Session).offset(skip).limit(limit).all()
 
 
+def get_session_by_id(db: Session, session_id: int):
+    return db.query(models.Session).filter(models.Session.id == session_id).first()
+
+
 def create_session(db: Session):
     """
     Add a session with a current time to the database
@@ -65,3 +69,19 @@ def get_open_session_id_or_create(db: Session):
     if open_session != []:
         return open_session[-1].id
     return create_session(db)
+
+
+def remove_session_by_id(db: Session, session_id: int):
+    session = get_session_by_id(db, session_id)
+    if session is None:
+        return None
+    db.delete(session)
+    db.commit()
+    return session
+
+
+def close_session_by_id(db: Session, session_id):
+    session = get_session_by_id(db, session_id)
+    session.end_datetime = datetime.datetime.now()
+    db.commit()
+    return session

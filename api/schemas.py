@@ -37,7 +37,7 @@ class SessionCreate(SessionBase):
 
 class Session(SessionBase):
     id: int
-    end_datetime: datetime.datetime
+    end_datetime: datetime.datetime = None
 
     class Config:
         orm_mode = True

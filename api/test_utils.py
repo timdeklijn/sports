@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from .database import Base
 from .main import app, get_db
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test_db.sqlite"
+SQLALCHEMY_DATABASE_URL = "sqlite:///test_db.sqlite"
 
 
 def create_test_client():
